@@ -1,0 +1,269 @@
+version: '3'
+services:
+  dns:
+    # build: ./dns
+    image: docker_dns
+    pull_policy: never
+    container_name: dns
+    restart: unless-stopped
+    env_file:
+      - .env
+    volumes:
+      - ./dns:/mnt/dns
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+    expose:
+      - "53/udp"
+    ports:
+      - "${DOCKER_HOST_IP}:53:53/udp"
+    networks:
+      default:
+        ipv4_address: ${DNS_IP}
+  rtpengine:
+    #build: ./rtpengine
+    image: docker_rtpengine
+    pull_policy: never
+    container_name: rtpengine
+    restart: unless-stopped
+    privileged: true
+    env_file:
+      - .env
+    volumes:
+      - ./rtpengine:/mnt/rtpengine
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+    cap_add:
+      - NET_ADMIN
+    environment:
+      - TABLE=0
+      - INTERFACE=${RTPENGINE_IP}
+      - LISTEN_NG=${RTPENGINE_IP}:2223
+      - PIDFILE=/run/ngcp-rtpengine-daemon.pid
+      - PORT_MAX=50000
+      - PORT_MIN=49000
+      - NO_FALLBACK=no
+      - TOS=184
+    expose:
+      - "2223/udp"
+      - "49000-50000/udp"
+    networks:
+      default:
+        ipv4_address: ${RTPENGINE_IP}
+  mysql:
+    #build: ./mysql
+    image: docker_mysql
+    pull_policy: never
+    restart: unless-stopped
+    container_name: mysql
+    env_file:
+      - .env
+    volumes:
+      - dbdata:/var/lib/mysql
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+    expose:
+      - "3306/tcp"
+    networks:
+      default:
+        ipv4_address: ${MYSQL_IP}
+  pyhss:
+    #build: ./pyhss
+    image: docker_pyhss
+    pull_policy: never
+    container_name: pyhss
+    restart: unless-stopped
+    dns: ${DNS_IP}
+    volumes:
+      - ./pyhss:/mnt/pyhss
+      - ./pyhss/logs:/pyhss/log/
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+    env_file:
+      - .env
+    depends_on:
+      - dns
+      - mysql
+    expose:
+      - "3868/udp"
+      - "3868/tcp"
+      - "8080/tcp"
+    ports:
+      - "8080:8080/tcp"
+    networks:
+      default:
+        ipv4_address: ${PYHSS_IP}
+  icscf:
+    image: docker_kamailio:fixed
+    pull_policy: never
+    container_name: icscf
+    restart: unless-stopped
+    dns: ${DNS_IP}
+    volumes:
+      - ./icscf:/mnt/icscf
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+    env_file:
+      - .env
+    environment:
+      - COMPONENT_NAME=icscf-1
+    depends_on:
+      - dns
+      - mysql
+      - pyhss
+    expose:
+      - "3869/udp"
+      - "3869/tcp"
+      - "4060/udp"
+      - "4060/tcp"
+    ports:
+      - "4060:4060/udp"
+      - "4060:4060/tcp"
+    networks:
+      default:
+        ipv4_address: ${ICSCF_IP}
+  scscf:
+    image: docker_kamailio:fixed
+    pull_policy: never
+    container_name: scscf
+    restart: unless-stopped
+    dns: ${DNS_IP}
+    volumes:
+      - ./scscf:/mnt/scscf
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+    env_file:
+      - .env
+    environment:
+      - COMPONENT_NAME=scscf-1
+    depends_on:
+      - dns
+      - mysql
+      - pyhss
+    expose:
+      - "3870/udp"
+      - "3870/tcp"
+      - "6060/udp"
+      - "6060/tcp"
+    ports:
+      - "6060:6060/udp"
+      - "6060:6060/tcp"
+    networks:
+      default:
+        ipv4_address: ${SCSCF_IP}
+  pcscf:
+    image: docker_kamailio:fixed
+    container_name: pcscf
+    restart: unless-stopped
+    dns: ${DNS_IP}
+    privileged: true
+    cap_add:
+      - NET_ADMIN
+    volumes:
+      - ./pcscf:/mnt/pcscf
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+    env_file:
+      - .env
+    environment:
+      - COMPONENT_NAME=pcscf-1
+      - DEPLOY_MODE=4G
+    depends_on:
+      - dns
+      - mysql
+      - rtpengine
+      - icscf
+      - scscf
+    expose:
+      - "3871/udp"
+      - "3871/tcp"
+      - "5060/tcp"
+      - "5060/udp"
+      - "5100-5120/tcp"
+      - "5100-5120/udp"
+      - "6100-6120/tcp"
+      - "6100-6120/udp"
+    ports:
+      - "3871:3871/udp"
+      - "3871:3871/tcp"
+      - "3871:3871/sctp"
+      - "5060:5060/udp"
+      - "5060:5060/tcp"
+      - "5100-5120:5100-5120/tcp"
+      - "5100-5120:5100-5120/udp"
+    networks:
+      default:
+        ipv4_address: ${PCSCF_IP}
+  smsc:
+    image: docker_kamailio:fixed
+    pull_policy: never
+    container_name: smsc
+    restart: unless-stopped
+    dns: ${DNS_IP}
+    volumes:
+      - ./smsc:/mnt/smsc
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+    env_file:
+      - .env
+    environment:
+      - COMPONENT_NAME=smsc-1
+    depends_on:
+      - dns
+      - mysql
+    expose:
+      - "7090/udp"
+      - "7090/tcp"
+    ports:
+      - "7090:7090/udp"
+      - "7090:7090/tcp"
+    networks:
+      default:
+        ipv4_address: ${SMSC_IP}
+  osmomsc:
+    #build: ./osmomsc
+    image: docker_osmomsc
+    pull_policy: never
+    container_name: osmomsc
+    restart: unless-stopped
+    volumes:
+      - ./osmomsc:/mnt/osmomsc
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+    env_file:
+      - .env
+    environment:
+      - COMPONENT_NAME=osmomsc-1
+    depends_on:
+      - osmohlr
+    expose:
+      - "29118/sctp"
+      - "2775/tcp"
+    networks:
+      default:
+        ipv4_address: ${OSMOMSC_IP}
+  osmohlr:
+    #build: ./osmohlr
+    image: docker_osmohlr
+    pull_policy: never
+    container_name: osmohlr
+    restart: unless-stopped
+    volumes:
+      - ./osmohlr:/mnt/osmohlr
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+    env_file:
+      - .env
+    environment:
+      - COMPONENT_NAME=osmohlr-1
+    expose:
+      - "4222/tcp"
+    networks:
+      default:
+        ipv4_address: ${OSMOHLR_IP}
+networks:
+  default:
+    ipam:
+      config:
+        - subnet: ${DOCKER_NETWORK}
+volumes:
+  dbdata: {}
