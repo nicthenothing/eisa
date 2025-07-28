@@ -14,7 +14,7 @@
 	DefaultAuthSessionTimeout="3600"
 	MaxAuthSessionTimeout="3600"
 >
-	<Peer FQDN="hss.IMS_DOMAIN" Realm="IMS_DOMAIN" port="PYHSS_BIND_PORT"/>
+	<Peer FQDN="hss.EPC_DOMAIN" Realm="EPC_DOMAIN" port="HSS_BIND_PORT"/>
 		
 	<Acceptor port="SCSCF_BIND_PORT" bind="SCSCF_IP"/>
 
@@ -32,5 +32,5 @@
         -->
         <SupportedVendor vendor="10415" />
 
-	<DefaultRoute FQDN="hss.IMS_DOMAIN" metric="10"/>
+	<DefaultRoute FQDN="hss.EPC_DOMAIN" metric="10"/>
 </DiameterPeer>
