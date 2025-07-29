@@ -42,6 +42,7 @@ RUN mkdir -p /usr/local/src/ && cd /usr/local/src/ && \
 	cd kamailio && git checkout 0da3eb3f94c087b272ebbe19c42fd933146482f8
 
 # Build and Install Kamailio
+RUN ls
 RUN cd /usr/local/src/kamailio && make cfg
 COPY modules.lst /usr/local/src/kamailio/src
 RUN cd /usr/local/src/kamailio && \
@@ -51,3 +52,5 @@ RUN cd /usr/local/src/kamailio && \
 
 COPY kamailio_init.sh /
 CMD ["/kamailio_init.sh"]
+
+

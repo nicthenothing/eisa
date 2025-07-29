@@ -55,6 +55,19 @@ then
 	mysql -u root -e "FLUSH PRIVILEGES;"
 fi
 
+# Multi-PLMN support tables
+mysql -u root << EOF
+CREATE TABLE IF NOT EXISTS roaming_agreements (
+    home_plmn VARCHAR(7) NOT NULL,
+    visited_plmn VARCHAR(7) NOT NULL, 
+    status ENUM('active','inactive') DEFAULT 'active',
+    PRIMARY KEY (home_plmn, visited_plmn)
+);
+
+INSERT IGNORE INTO roaming_agreements VALUES 
+('${MCC:-432}:${MNC:-80}', '432:11', 'active');
+EOF
+
 pkill -9 mysqld
 sleep 5
 mysqld_safe
