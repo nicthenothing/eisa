@@ -63,7 +63,7 @@ services:
         ipv4_address: ${MYSQL_IP}
   icscf:
     #was : docker_kamailio
-    image: kamailio-custom:latest
+    image: docker_kamailio:fixed
     pull_policy: never
     restart: unless-stopped
     container_name: icscf
@@ -95,7 +95,7 @@ services:
   scscf:
     #was : docker_kamailio
 
-    image: kamailio-custom:latest
+    image: docker_kamailio:fixed
     container_name: scscf
     pull_policy: never
     restart: unless-stopped
@@ -126,7 +126,7 @@ services:
         ipv4_address: ${SCSCF_IP}
   pcscf:
     #was : docker_kamailio
-    image: kamailio-custom:latest
+    image: docker_kamailio:fixed
     container_name: pcscf
     restart: unless-stopped
     dns: ${DNS_IP}
@@ -172,7 +172,7 @@ services:
         ipv4_address: ${PCSCF_IP}
   smsc:
   #was : docker_kamailio
-    image: kamailio-custom:latest
+    image: docker_kamailio:fixed
     container_name: smsc
     dns: ${DNS_IP}
     volumes:

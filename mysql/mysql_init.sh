@@ -65,7 +65,7 @@ CREATE TABLE IF NOT EXISTS roaming_agreements (
 );
 
 INSERT IGNORE INTO roaming_agreements VALUES 
-('${MCC:-432}:${MNC:-80}', '432:11', 'active');
+('${MCC:-432}:${MNC:-080}', '432:011', 'active');
 EOF
 
 pkill -9 mysqld
